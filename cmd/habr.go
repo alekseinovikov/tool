@@ -36,12 +36,14 @@ var habrCmd = &cobra.Command{
 	Long:  `Fetches latest posts from habr.com and prints the list with titles. Use parameter of the index to open the article in browser.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 {
-			article_num, err := strconv.Atoi(args[0])
-			if err != nil {
-				log.Fatal("Wrong argument! Must be a number!")
-				return
+			for _, arg := range args {
+				articleNum, err := strconv.Atoi(arg)
+				if err != nil {
+					log.Fatal("Wrong argument! Must be a number!")
+					return
+				}
+				openArticle(articleNum)
 			}
-			openArticle(article_num)
 		} else {
 			getAllArticles()
 		}
