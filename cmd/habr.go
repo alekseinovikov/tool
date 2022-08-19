@@ -22,10 +22,10 @@ type linkItem struct {
 }
 
 func (item *linkItem) printSelf() {
-	blue := color.New(color.FgBlue)
+	white := color.New(color.FgWhite)
 	yellow := color.New(color.FgYellow)
 
-	blue.Printf("[%d] ", item.index)
+	white.Printf("[%d] ", item.index)
 	yellow.Printf("%s\n", item.title)
 }
 
