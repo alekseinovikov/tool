@@ -1,19 +1,16 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/fatih/color"
-	"github.com/pkg/browser"
-	"github.com/spf13/cobra"
+	"github.com/rivo/tview"
+	"github.com/toqueteos/webbrowser"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 const ROOT = "https://habr.com"
+
+var SHORTCUTS = []rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 
 type linkItem struct {
 	index int
@@ -21,80 +18,43 @@ type linkItem struct {
 	link  string
 }
 
-func (item *linkItem) printSelf() {
-	white := color.New(color.FgWhite)
-	yellow := color.New(color.FgYellow)
-
-	white.Printf("[%d] ", item.index)
-	yellow.Printf("%s\n", item.title)
+func NewHabr() Command {
+	return habr{}
 }
 
-// habrCmd represents the habr command
-var habrCmd = &cobra.Command{
-	Use:   "habr",
-	Short: "Fetches latest posts from habr.com",
-	Long:  `Fetches latest posts from habr.com and prints the list with titles. Use parameter of the index to open the article in browser.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) > 0 {
-			for _, arg := range args {
-				articleNum, err := strconv.Atoi(arg)
-				if err != nil {
-					log.Fatal("Wrong argument! Must be a number!")
-					return
-				}
-				openArticle(articleNum)
-			}
-		} else {
-			getAllArticles()
-		}
-	},
+type habr struct {
 }
 
-func init() {
-	rootCmd.AddCommand(habrCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// habrCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// habrCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func getAllArticles() {
+func (habr) Run(app *tview.Application, main tview.Primitive) {
 	items, found := getAndParseLinkItems()
 	if !found {
 		return
 	}
 
+	list := tview.NewList().ShowSecondaryText(false)
+
+	buildMenu(list, items)
+	list.AddItem("Quit", "", 'q', func() {
+		app.SetRoot(main, true).SetFocus(main)
+	})
+
+	app.SetRoot(list, true).SetFocus(list)
+}
+
+func buildMenu(list *tview.List, items []linkItem) {
 	for _, item := range items {
-		item.printSelf()
+		list.AddItem(item.title, "", SHORTCUTS[item.index], openLinkCallback(item))
 	}
 }
 
-func openArticle(num int) {
-	items, found := getAndParseLinkItems()
-	if !found {
-		return
+func openLinkCallback(item linkItem) func() {
+	return func() {
+		openArticle(item.link)
 	}
+}
 
-	var selectedItem *linkItem = nil
-	for _, item := range items {
-		if item.index == num {
-			selectedItem = &item
-			break
-		}
-	}
-
-	if selectedItem == nil {
-		log.Fatal("Wrong article number!")
-		return
-	}
-
-	browser.OpenURL(selectedItem.link)
+func openArticle(link string) {
+	webbrowser.Open(link)
 }
 
 func getAndParseLinkItems() (result []linkItem, found bool) {
