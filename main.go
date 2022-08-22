@@ -29,6 +29,7 @@ func showMainMenu() {
 			app.Stop()
 		})
 
+	list.SetBorder(true)
 	mainView = list
 	app.SetRoot(mainView, true).SetFocus(mainView)
 }

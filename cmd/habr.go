@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/PuerkitoBio/goquery"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/toqueteos/webbrowser"
 	"log"
@@ -9,8 +10,8 @@ import (
 )
 
 const ROOT = "https://habr.com"
-
-var SHORTCUTS = []rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+const ArticlesUrl = ROOT + "/ru/all/"
+const LinksSelector = ".tm-article-snippet__title-link"
 
 type linkItem struct {
 	index int
@@ -31,25 +32,78 @@ func (habr) Run(app *tview.Application, main tview.Primitive) {
 		return
 	}
 
-	list := tview.NewList().ShowSecondaryText(false)
+	form := tview.NewForm().
+		SetItemPadding(1)
 
-	buildMenu(list, items)
-	list.AddItem("Quit", "", 'q', func() {
-		app.SetRoot(main, true).SetFocus(main)
-	})
+	checked := buildMenu(form, items)
+	form.AddButton("Open", func() {
+		openChecked(checked)
+		exit(app, main)
+	}).AddButton("Cancel", func() {
+		exit(app, main)
+	}).SetCancelFunc(func() {
+		exit(app, main)
+	}).SetInputCapture(bindKeys(app, main, checked)).
+		SetBorder(true).
+		SetTitle("Check articles to open an press 'o'")
 
-	app.SetRoot(list, true).SetFocus(list)
+	app.SetRoot(form, true).SetFocus(form)
 }
 
-func buildMenu(list *tview.List, items []linkItem) {
-	for _, item := range items {
-		list.AddItem(item.title, "", SHORTCUTS[item.index], openLinkCallback(item))
+func bindKeys(app *tview.Application, main tview.Primitive, checked map[linkItem]bool) func(event *tcell.EventKey) *tcell.EventKey {
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'q':
+			exit(app, main)
+			return nil
+		case 'o':
+			openChecked(checked)
+			exit(app, main)
+			return nil
+		}
+
+		switch {
+		case event.Key() == tcell.KeyDown:
+			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
+		case event.Key() == tcell.KeyUp:
+			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
+		}
+
+		return event
 	}
 }
 
-func openLinkCallback(item linkItem) func() {
-	return func() {
-		openArticle(item.link)
+func exit(app *tview.Application, main tview.Primitive) *tview.Application {
+	return app.SetRoot(main, true).SetFocus(main)
+}
+
+func buildMenu(form *tview.Form, items []linkItem) map[linkItem]bool {
+	var checked = make(map[linkItem]bool, 0)
+	for _, item := range items {
+		checked[item] = false
+		checkBox := tview.NewCheckbox().
+			SetChecked(false).
+			SetChangedFunc(addCheckedCallback(item, checked))
+		checkBox.
+			SetLabel(item.title).
+			SetBackgroundColor(tcell.ColorGrey)
+		form.AddFormItem(checkBox)
+	}
+
+	return checked
+}
+
+func addCheckedCallback(item linkItem, checkedMap map[linkItem]bool) func(bool2 bool) {
+	return func(checked bool) {
+		checkedMap[item] = checked
+	}
+}
+
+func openChecked(checked map[linkItem]bool) {
+	for item, selected := range checked {
+		if selected {
+			openArticle(item.link)
+		}
 	}
 }
 
@@ -58,9 +112,9 @@ func openArticle(link string) {
 }
 
 func getAndParseLinkItems() (result []linkItem, found bool) {
-	res, err := http.Get(ROOT + "/ru/all/")
+	res, err := http.Get(ArticlesUrl)
 	if err != nil {
-		log.Fatal("Can't fetch habr.com/ru/all/" + err.Error())
+		log.Fatal("Can't fetch " + ArticlesUrl + err.Error())
 		return
 	}
 	defer res.Body.Close()
@@ -75,8 +129,8 @@ func getAndParseLinkItems() (result []linkItem, found bool) {
 		return
 	}
 
-	counter := 1
-	doc.Find(".tm-article-snippet__title-link").Each(func(i int, selection *goquery.Selection) {
+	counter := 0
+	doc.Find(LinksSelector).Each(func(i int, selection *goquery.Selection) {
 		title := selection.Find("span").Text()
 		link, exists := selection.Attr("href")
 		if exists {
