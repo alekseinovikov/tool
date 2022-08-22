@@ -73,10 +73,6 @@ func bindKeys(app *tview.Application, main tview.Primitive, checked map[linkItem
 	}
 }
 
-func exit(app *tview.Application, main tview.Primitive) *tview.Application {
-	return app.SetRoot(main, true).SetFocus(main)
-}
-
 func buildMenu(form *tview.Form, items []linkItem) map[linkItem]bool {
 	var checked = make(map[linkItem]bool, 0)
 	for _, item := range items {

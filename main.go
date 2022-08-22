@@ -24,7 +24,7 @@ func main() {
 func showMainMenu() {
 	list := tview.NewList().
 		AddItem("Habr", "Read some habr articles", 'h', habrCommand).
-		AddItem("Hello", "Print Hello World", 'w', helloWorld).
+		AddItem("Weather", "Show current weather", 'w', weatherCommand).
 		AddItem("Quit", "Exit from the application", 'q', func() {
 			app.Stop()
 		})
@@ -34,10 +34,10 @@ func showMainMenu() {
 	app.SetRoot(mainView, true).SetFocus(mainView)
 }
 
-func helloWorld() {
-	cmd.NewHello().Run(app, mainView)
-}
-
 func habrCommand() {
 	cmd.NewHabr().Run(app, mainView)
+}
+
+func weatherCommand() {
+	cmd.NewWeatherCommand().Run(app, mainView)
 }
