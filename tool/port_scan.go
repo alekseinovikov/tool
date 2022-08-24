@@ -8,7 +8,7 @@ import (
 
 const (
 	maxPort         uint16 = 65535
-	goroutinesCount        = 2000
+	goroutinesCount        = 5000
 )
 
 type AttemptResult struct {
