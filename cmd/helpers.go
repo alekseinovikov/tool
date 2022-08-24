@@ -7,7 +7,9 @@ import (
 
 func exit(app *tview.Application, main tview.Primitive, quitChains ...chan<- interface{}) *tview.Application {
 	for _, quitChain := range quitChains {
-		quitChain <- true
+		if quitChain != nil {
+			quitChain <- true
+		}
 	}
 	return app.SetRoot(main, true).SetFocus(main)
 }

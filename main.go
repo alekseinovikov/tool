@@ -25,6 +25,7 @@ func showMainMenu() {
 	list := tview.NewList().
 		AddItem("Habr", "Read some habr articles", 'h', habrCommand).
 		AddItem("Weather", "Show current weather", 'w', weatherCommand).
+		AddItem("Port Scanner", "Scans all ports by host", 's', portScanCommand).
 		AddItem("Quit", "Exit from the application", 'q', func() {
 			app.Stop()
 		})
@@ -40,4 +41,8 @@ func habrCommand() {
 
 func weatherCommand() {
 	cmd.NewWeatherCommand().Run(app, mainView)
+}
+
+func portScanCommand() {
+	cmd.NewPortScanner().Run(app, mainView)
 }

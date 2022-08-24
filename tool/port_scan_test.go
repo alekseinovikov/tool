@@ -10,17 +10,16 @@ import (
 func Test_scan(t *testing.T) {
 	go func() { http.ListenAndServe(":8080", http.DefaultServeMux) }()
 	time.Sleep(time.Second) //waiting for 8080 to be open
-	scanCommand := portScan{}
-
-	//results, _ := scanCommand.scan("scanme.nmap.org")
-	results, _ := scanCommand.scan("localhost")
+	//"scanme.nmap.org"
+	scanCommand := NewPortScan("localhost")
+	results, _ := scanCommand.Scan()
 	foundPort := false
 	for result := range results {
-		if result.open {
-			fmt.Printf("Port: %d is open %t\n", result.port, result.open)
+		if result.Open {
+			fmt.Printf("Port: %d is open %t\n", result.Port, result.Open)
 		}
 
-		if 8080 == result.port {
+		if 8080 == result.Port {
 			foundPort = true
 		}
 	}
